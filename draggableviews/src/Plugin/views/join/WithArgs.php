@@ -21,14 +21,16 @@ class WithArgs extends JoinPluginBase {
   public function buildJoin($select_query, $table, $view_query) {
     /** @var ViewExecutable $view */
     $view = $view_query->view;
-    $view_args = !empty($view_query->view->args) ? $view_query->view->args : [];
+    $view_args = !empty($view_query->view->args) ? json_encode($view_query->view->args) : [];
+    $view_args .= !empty($view_query->view->getExposedInput()) ? json_encode($view_query->view->getExposedInput()) : [];
+    \Drupal::logger('DraggableViews')->notice('Exposed input: ' . json_encode($view_query->view->getExposedInput()));
     $context = [
       'select_query' => &$select_query,
       'table' => &$table,
       'view_query' => &$view_query,
     ];
     \Drupal::moduleHandler()->alter('draggableviews_join_withargs', $view_args, $context);
-    $view_args = json_encode($view_args);
+    // $view_args = json_encode($view_args);
 
     if (!isset($this->extra)) {
       $this->extra = [];
@@ -40,7 +42,7 @@ class WithArgs extends JoinPluginBase {
     foreach($sort as $sortClass) {
       if($sortClass instanceof DraggableViewsSort) {
         $pass = $sortClass->options['draggable_views_pass_arguments'] ?? 0;
-        if(empty($pass) || $pass ===  '0') {
+        if(empty($pass) || $pass === '0') {
           $includeArgs = false;
         }
       }
