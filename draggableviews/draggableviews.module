@@ -171,7 +171,6 @@ function draggableviews_views_submit(&$form, FormStateInterface $form_state) {
   $view_name = $view->id();
   $view_display = $view->current_display;
   $view_args = !empty($view->args) ? json_encode($view->args) : '[]';
-  $view_args .= !empty($view->getExposedInput()) ? json_encode($view->getExposedInput()) : '[]';
 
   $connection = Database::getConnection();
   $transaction = $connection->startTransaction();
