@@ -1,0 +1,72 @@
+diff --git a/draggableviews/draggableviews.module b/draggableviews/draggableviews.module
+index c981b9e..90dbc1b 100644
+--- a/draggableviews/draggableviews.module
++++ b/draggableviews/draggableviews.module
+@@ -170,7 +170,20 @@ function draggableviews_views_submit(&$form, FormStateInterface $form_state) {
+   $view = $form_state->getBuildInfo()['args'][0];
+   $view_name = $view->id();
+   $view_display = $view->current_display;
+-  $view_args = !empty($view->args) ? json_encode($view->args) : '[]';
++  // $view_args = !empty($view->args) ? json_encode($view->args) : '[]';
++  // Arguments and Exposed Inputs.
++  if (empty($view->args) && empty($view->getExposedInput())) {
++    $view_args =  '[]';
++  }
++  elseif (!empty($view->args) && !empty($view->getExposedInput())) {
++    $view_args = json_encode($view->args) . json_encode($view->getExposedInput());
++  }
++  elseif (!empty($view->args) && empty($view->getExposedInput())) {
++    $view_args = json_encode($view->args);
++  }
++  elseif (empty($view->args) && !empty($view->getExposedInput())) {
++    $view_args = json_encode($view->getExposedInput());
++  }
+ 
+   $connection = Database::getConnection();
+   $transaction = $connection->startTransaction();
+diff --git a/draggableviews/src/Plugin/views/join/WithArgs.php b/draggableviews/src/Plugin/views/join/WithArgs.php
+index a1acfbd..2fd012c 100644
+--- a/draggableviews/src/Plugin/views/join/WithArgs.php
++++ b/draggableviews/src/Plugin/views/join/WithArgs.php
+@@ -21,7 +21,19 @@ class WithArgs extends JoinPluginBase {
+   public function buildJoin($select_query, $table, $view_query) {
+     /** @var ViewExecutable $view */
+     $view = $view_query->view;
+-    $view_args = !empty($view_query->view->args) ? $view_query->view->args : [];
++    // $view_args = !empty($view_query->view->args) ? $view_query->view->args : [];
++    if (empty($view_query->view->args) && empty($view_query->view->getExposedInput())) {
++      $view_args = [];
++    }
++    elseif (!empty($view_query->view->args) && !empty($view_query->view->getExposedInput())) {
++      $view_args = array_merge($view_query->view->args, $view_query->view->getExposedInput());
++    }
++    elseif (!empty($view_query->view->args) && empty($view_query->view->getExposedInput())) {
++      $view_args = $view_query->view->args;
++    }
++    elseif (empty($view_query->view->args) && !empty($view_query->view->getExposedInput())) {
++      $view_args = $view_query->view->getExposedInput();
++    }
+     $context = [
+       'select_query' => &$select_query,
+       'table' => &$table,
+@@ -34,14 +46,14 @@ class WithArgs extends JoinPluginBase {
+       $this->extra = [];
+     }
+ 
+-    //exclude args if arguments aren't passed
+-    $includeArgs = true;
++    // Exclude args if arguments aren't passed.
++    $includeArgs = TRUE;
+     $sort = $view->sort ?? [];
+-    foreach($sort as $sortClass) {
+-      if($sortClass instanceof DraggableViewsSort) {
++    foreach ($sort as $sortClass) {
++      if ($sortClass instanceof DraggableViewsSort) {
+         $pass = $sortClass->options['draggable_views_pass_arguments'] ?? 0;
+-        if(empty($pass) || $pass ===  '0') {
+-          $includeArgs = false;
++        if (empty($pass) || $pass === '0') {
++          $includeArgs = FALSE;
+         }
+       }
+     }
